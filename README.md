@@ -1,2 +1,2 @@
 # utils
-Utility functions for gohtml packages.
+Reusable utility functions for gohtml packages.
