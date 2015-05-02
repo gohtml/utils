@@ -29,3 +29,20 @@ func TestHTMLNodeSet(t *testing.T) {
 	set.Del("a")
 	assert.StringEqual(t, "set", "[b d]", set)
 }
+
+func TestByteMask(t *testing.T) {
+	var allowed byteMask
+	assert.StringEqual(t, "allowed", allowed, `""`)
+
+	allowed['a'] = true
+	assert.StringEqual(t, "allowed", allowed, `"a"`)
+
+	allowed = byteMaskFromString("aBc")
+	assert.StringEqual(t, "allowed", allowed, `"Bac"`)
+
+	allowed.UnionWith(byteMaskFromString("DeF"))
+	assert.StringEqual(t, "allowed", allowed, `"BDFace"`)
+
+	allowed.SetRange('0', '9')
+	assert.StringEqual(t, "allowed", allowed, `"0123456789BDFace"`)
+}
