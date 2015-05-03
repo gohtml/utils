@@ -23,3 +23,9 @@ func TestEscapeQuery(t *testing.T) {
 	assert.Equal(t, "EscapeQuery", EscapeQuery("abc DEF"), "abc+DEF")
 	assert.Equal(t, "EscapeQuery", EscapeQuery("abc&123"), "abc%26123")
 }
+
+func TestEscapeHost(t *testing.T) {
+	assert.Equal(t, "EscapeHost", EscapeHost("www.example.com"), "www.example.com")
+	assert.Equal(t, "EscapeHost", EscapeHost("www.?git-hub.com://"), "www.git-hub.com")
+	assert.Equal(t, "EscapeHost", EscapeHost("www.e中文e.com"), "www.ee.com")
+}

@@ -107,6 +107,7 @@ func init() {
 	isUrlRegNameChars.UnionWith(isUrlSubDelims)
 }
 
+// Escapes a string so that it is a valid query part(name or value).
 func EscapeQuery(s string) string {
 	var bs bytesp.ByteSlice
 	scanned := 0
@@ -129,4 +130,22 @@ func EscapeQuery(s string) string {
 	}
 	bs.WriteString(s[scanned:])
 	return string(bs)
+}
+
+func escapeIPliteral(s string) string {
+	var bs bytesp.ByteSlice
+	bs.WriteByte('[')
+	bs = appendByteMaskFilteredString(bs, s[1:len(s)-1], &isUrlIpLiteralChars)
+	bs.WriteByte(']')
+	return string(bs)
+}
+
+// Escapes/filters a string so that it is a valid hostname.
+func EscapeHost(s string) string {
+	if len(s) > 4 && s[0] == '[' && s[len(s)-1] == ']' {
+		// RFC 3986: IP-literal
+		return escapeIPliteral(s)
+	}
+
+	return string(appendByteMaskFilteredString(nil, s, &isUrlRegNameChars))
 }
