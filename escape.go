@@ -26,6 +26,17 @@ func escapeString(s string, table *byteEscapeTable) string {
 	return string(bs)
 }
 
+// http://www.w3.org/TR/html5/syntax.html#escapingString
+var attrEscapeTable = byteEscapeTable{
+	0xA0: "&nbsp;",
+	'"':  "&quot;",
+	'&':  "&amp;",
+}
+
+func EscapeAttr(s string) string {
+	return escapeString(s, &attrEscapeTable)
+}
+
 func appendByteMaskFilteredString(bs bytesp.ByteSlice, s string, allowed *byteMask) bytesp.ByteSlice {
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {

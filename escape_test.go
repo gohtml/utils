@@ -29,3 +29,8 @@ func TestEscapeHost(t *testing.T) {
 	assert.Equal(t, "EscapeHost", EscapeHost("www.?git-hub.com://"), "www.git-hub.com")
 	assert.Equal(t, "EscapeHost", EscapeHost("www.e中文e.com"), "www.ee.com")
 }
+
+func TestEscapeAttr(t *testing.T) {
+	assert.Equal(t, "EscapeAttr", EscapeAttr("www.example.com"), "www.example.com")
+	assert.Equal(t, "EscapeAttr", EscapeAttr("\"&amp;va\xa0lue\""), "&quot;&amp;amp;va&nbsp;lue&quot;")
+}
