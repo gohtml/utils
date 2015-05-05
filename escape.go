@@ -1,21 +1,25 @@
 package utils
 
 import (
+	"unicode"
+	"unicode/utf8"
+
 	"github.com/golangplus/bytes"
 )
 
-type byteEscapeTable [256]string
+type byteEscapeTable []string
 
-func escapeString(s string, table *byteEscapeTable) string {
+func escapeString(s string, table byteEscapeTable) string {
 	var bs bytesp.ByteSlice
 	scanned := 0
-	for i, n := 0, len(s); i < n; i++ {
-		b := s[i]
-		if esc := table[b]; len(esc) != 0 {
-			bs.WriteString(s[scanned:i])
-			bs.WriteString(esc)
+	for i, r := range s {
+		if int(r) < len(table) {
+			if esc := table[r]; len(esc) != 0 {
+				bs.WriteString(s[scanned:i])
+				bs.WriteString(esc)
 
-			scanned = i + 1
+				scanned = i + utf8.RuneLen(r)
+			}
 		}
 	}
 
@@ -26,6 +30,54 @@ func escapeString(s string, table *byteEscapeTable) string {
 	return string(bs)
 }
 
+// http://www.w3.org/TR/html5/syntax.html#syntax-attributes
+// Excluding 0x7f..0x9f
+var invalidAttrNameBytes ascMask
+
+func init() {
+	invalidAttrNameBytes = IsSpaceCharacter
+	invalidAttrNameBytes.UnionWith(ascMaskFromString("\"'>/="))
+	invalidAttrNameBytes.SetRange(0x00, 0x1F)
+}
+
+// Normalize an attribute name string.
+// http://www.w3.org/TR/html5/syntax.html#syntax-attributes
+func NormAttrName(s string) string {
+	var bs bytesp.ByteSlice
+	scanned := 0
+	for i, r := range s {
+		lower := unicode.ToLower(r)
+		if lower != r {
+			bs.WriteString(s[scanned:i])
+			bs.WriteRune(lower)
+			scanned = i + utf8.RuneLen(r)
+		} else if (r < 128 && invalidAttrNameBytes[r]) || unicode.IsControl(r) {
+			bs.WriteString(s[scanned:i])
+			scanned = i + utf8.RuneLen(r)
+		}
+	}
+
+	if scanned == 0 {
+		return s
+	}
+
+	bs.WriteString(s[scanned:])
+
+	return string(bs)
+}
+
+var htmlEscapeTable = byteEscapeTable{
+	0xA0: "&nbsp",
+	'"':  "&quot;",
+	'&':  "&amp;",
+	'<':  "&lt;",
+	'>':  "&gt;",
+}
+
+func EscapeHTML(s string) string {
+	return s
+}
+
 // http://www.w3.org/TR/html5/syntax.html#escapingString
 var attrEscapeTable = byteEscapeTable{
 	0xA0: "&nbsp;",
@@ -33,18 +85,17 @@ var attrEscapeTable = byteEscapeTable{
 	'&':  "&amp;",
 }
 
+// Escapes a string so that it is a valid attribute value.
 func EscapeAttr(s string) string {
-	return escapeString(s, &attrEscapeTable)
+	return escapeString(s, attrEscapeTable)
 }
 
-func appendByteMaskFilteredString(bs bytesp.ByteSlice, s string, allowed *byteMask) bytesp.ByteSlice {
+func appendByteMaskFilteredString(bs bytesp.ByteSlice, s string, allowed *ascMask) bytesp.ByteSlice {
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {
 		b := s[i]
-		if !allowed[b] {
-			if i > scanned {
-				bs.WriteString(s[scanned:i])
-			}
+		if b >= 128 || !allowed[b] {
+			bs.WriteString(s[scanned:i])
 			scanned = i + 1
 		}
 	}
@@ -67,11 +118,11 @@ func init() {
 	}
 }
 
-func appendByteMaskPctEncodedString(bs bytesp.ByteSlice, s string, unchanged *byteMask) bytesp.ByteSlice {
+func appendAscMaskPctEncodedString(bs bytesp.ByteSlice, s string, unchanged *ascMask) bytesp.ByteSlice {
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {
 		b := s[i]
-		if !unchanged[b] {
+		if b >= 128 || !unchanged[b] {
 			if i > scanned {
 				bs.WriteString(s[scanned:i])
 			}
@@ -88,7 +139,7 @@ func appendByteMaskPctEncodedString(bs bytesp.ByteSlice, s string, unchanged *by
 }
 
 // RFC 3986: reserved
-var isUrlUnreserved byteMask
+var isUrlUnreserved ascMask
 
 func init() {
 	isUrlUnreserved.SetRange('a', 'z')
@@ -98,12 +149,12 @@ func init() {
 }
 
 // RFC 3986: gen-delims
-var isUrlGenDelimis = byteMaskFromString(":/?#[]@")
+var isUrlGenDelimis = ascMaskFromString(":/?#[]@")
 
 // RFC 3986: sub-delims
-var isUrlSubDelims = byteMaskFromString("!$&'()*+,;=")
+var isUrlSubDelims = ascMaskFromString("!$&'()*+,;=")
 
-var isUrlIpLiteralChars byteMask
+var isUrlIpLiteralChars ascMask
 
 func init() {
 	isUrlIpLiteralChars = isUrlUnreserved
@@ -111,7 +162,7 @@ func init() {
 	isUrlIpLiteralChars[':'] = true
 }
 
-var isUrlRegNameChars byteMask
+var isUrlRegNameChars ascMask
 
 func init() {
 	isUrlRegNameChars = isUrlUnreserved
@@ -124,7 +175,7 @@ func EscapeQuery(s string) string {
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {
 		b := s[i]
-		if !isUrlUnreserved[b] {
+		if b >= 128 || !isUrlUnreserved[b] {
 			bs.WriteString(s[scanned:i])
 			if b == ' ' {
 				bs.WriteByte('+')

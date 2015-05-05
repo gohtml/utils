@@ -7,16 +7,16 @@ import (
 )
 
 func TestByteMask(t *testing.T) {
-	var allowed byteMask
+	var allowed ascMask
 	assert.StringEqual(t, "allowed", allowed, `""`)
 
 	allowed['a'] = true
 	assert.StringEqual(t, "allowed", allowed, `"a"`)
 
-	allowed = byteMaskFromString("aBc")
+	allowed = ascMaskFromString("aBc")
 	assert.StringEqual(t, "allowed", allowed, `"Bac"`)
 
-	allowed.UnionWith(byteMaskFromString("DeF"))
+	allowed.UnionWith(ascMaskFromString("DeF"))
 	assert.StringEqual(t, "allowed", allowed, `"BDFace"`)
 
 	allowed.SetRange('0', '9')

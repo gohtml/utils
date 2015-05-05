@@ -6,11 +6,15 @@ import (
 	"github.com/golangplus/bytes"
 )
 
+// IsSpaceCharacters is a byteMask defining whether a byte is a space characters.
+// http://www.w3.org/TR/html5/infrastructure.html#space-character
+var IsSpaceCharacter ascMask = ascMaskFromString(" \t\n\f\r")
+
 // byteMask represents a set of bytes by setting a boolean
 // value for each possible byte.
-type byteMask [256]bool
+type ascMask [128]bool
 
-func (mask byteMask) String() string {
+func (mask ascMask) String() string {
 	var bs bytesp.ByteSlice
 	for c, in := range mask {
 		if in {
@@ -20,15 +24,19 @@ func (mask byteMask) String() string {
 	return strconv.Quote(string(bs))
 }
 
-func byteMaskFromString(s string) (mask byteMask) {
+func ascMaskFromString(s string) (mask ascMask) {
 	mask.SetByString(s)
 	return
+}
+
+func (this ascMask) Union(that ascMask) ascMask {
+	return *this.UnionWith(that)
 }
 
 // Returns self for chaining grammar.
 // that is not passed as a pointer for easier chain operation. This is not efficient but
 // more convinient. Use it only in initialization part.
-func (this *byteMask) UnionWith(that byteMask) *byteMask {
+func (this *ascMask) UnionWith(that ascMask) *ascMask {
 	for i, el := range that {
 		if el {
 			this[i] = true
@@ -38,7 +46,7 @@ func (this *byteMask) UnionWith(that byteMask) *byteMask {
 	return this
 }
 
-func (arr *byteMask) SetByString(s string) {
+func (arr *ascMask) SetByString(s string) {
 	for _, c := range s {
 		if c < rune(len(arr)) {
 			arr[c] = true
@@ -46,7 +54,8 @@ func (arr *byteMask) SetByString(s string) {
 	}
 }
 
-func (arr *byteMask) SetRange(mn, mx byte) {
+// SetRange sets bytes between mn and mx inclusively.
+func (arr *ascMask) SetRange(mn, mx byte) {
 	for i := int(mn); i <= int(mx); i++ {
 		arr[i] = true
 	}
