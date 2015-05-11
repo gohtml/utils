@@ -10,6 +10,15 @@ import (
 // http://www.w3.org/TR/html5/infrastructure.html#space-character
 var IsSpaceCharacter ascMask = ascMaskFromString(" \t\n\f\r")
 
+// StartWithSpace checks whether the first char of a string is a space.
+func StartWithSpace(txt string) bool {
+	if len(txt) == 0 {
+		return false
+	}
+
+	return txt[0] < 128 && IsSpaceCharacter[txt[0]]
+}
+
 // byteMask represents a set of bytes by setting a boolean
 // value for each possible byte.
 type ascMask [128]bool
@@ -59,4 +68,15 @@ func (arr *ascMask) SetRange(mn, mx byte) {
 	for i := int(mn); i <= int(mx); i++ {
 		arr[i] = true
 	}
+}
+
+func IntSliceToBytes(ints []int) []byte {
+	var b []byte
+	for idx, i := range ints {
+		b = strconv.AppendInt(b, int64(i), 10)
+		if idx > 0 {
+			b = append(b, ',')
+		}
+	}
+	return b
 }

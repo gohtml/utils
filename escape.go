@@ -75,7 +75,7 @@ var htmlEscapeTable = byteEscapeTable{
 }
 
 func EscapeHTML(s string) string {
-	return s
+	return escapeString(s, htmlEscapeTable)
 }
 
 // http://www.w3.org/TR/html5/syntax.html#escapingString
