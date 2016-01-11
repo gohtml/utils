@@ -24,7 +24,7 @@ func StartWithSpace(txt string) bool {
 type ascMask [128]bool
 
 func (mask ascMask) String() string {
-	var bs bytesp.ByteSlice
+	var bs bytesp.Slice
 	for c, in := range mask {
 		if in {
 			bs.WriteByte(byte(c))

@@ -10,7 +10,7 @@ import (
 type byteEscapeTable []string
 
 func escapeString(s string, table byteEscapeTable) string {
-	var bs bytesp.ByteSlice
+	var bs bytesp.Slice
 	scanned := 0
 	for i, r := range s {
 		if int(r) < len(table) {
@@ -22,7 +22,6 @@ func escapeString(s string, table byteEscapeTable) string {
 			}
 		}
 	}
-
 	if scanned == 0 {
 		return s
 	}
@@ -43,24 +42,24 @@ func init() {
 // Normalize an attribute name string.
 // http://www.w3.org/TR/html5/syntax.html#syntax-attributes
 func NormAttrName(s string) string {
-	var bs bytesp.ByteSlice
+	var bs bytesp.Slice
 	scanned := 0
 	for i, r := range s {
 		lower := unicode.ToLower(r)
 		if lower != r {
+			// replace r with lower
 			bs.WriteString(s[scanned:i])
 			bs.WriteRune(lower)
 			scanned = i + utf8.RuneLen(r)
 		} else if (r < 128 && invalidAttrNameBytes[r]) || unicode.IsControl(r) {
+			// filter out r
 			bs.WriteString(s[scanned:i])
 			scanned = i + utf8.RuneLen(r)
 		}
 	}
-
 	if scanned == 0 {
 		return s
 	}
-
 	bs.WriteString(s[scanned:])
 
 	return string(bs)
@@ -90,16 +89,14 @@ func EscapeAttr(s string) string {
 	return escapeString(s, attrEscapeTable)
 }
 
-func appendByteMaskFilteredString(bs bytesp.ByteSlice, s string, allowed *ascMask) bytesp.ByteSlice {
+func appendByteMaskFilteredString(bs bytesp.Slice, s string, allowed *ascMask) bytesp.Slice {
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {
-		b := s[i]
-		if b >= 128 || !allowed[b] {
+		if b := s[i]; b >= 128 || !allowed[b] {
 			bs.WriteString(s[scanned:i])
 			scanned = i + 1
 		}
 	}
-
 	bs.WriteString(s[scanned:])
 
 	return bs
@@ -118,11 +115,10 @@ func init() {
 	}
 }
 
-func appendAscMaskPctEncodedString(bs bytesp.ByteSlice, s string, unchanged *ascMask) bytesp.ByteSlice {
+func appendAscMaskPctEncodedString(bs bytesp.Slice, s string, unchanged *ascMask) bytesp.Slice {
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {
-		b := s[i]
-		if b >= 128 || !unchanged[b] {
+		if b := s[i]; b >= 128 || !unchanged[b] {
 			if i > scanned {
 				bs.WriteString(s[scanned:i])
 			}
@@ -132,7 +128,6 @@ func appendAscMaskPctEncodedString(bs bytesp.ByteSlice, s string, unchanged *asc
 			scanned = i + 1
 		}
 	}
-
 	bs.WriteString(s[scanned:len(s)])
 
 	return bs
@@ -171,7 +166,7 @@ func init() {
 
 // Escapes a string so that it is a valid query part(name or value).
 func EscapeQuery(s string) string {
-	var bs bytesp.ByteSlice
+	var bs bytesp.Slice
 	scanned := 0
 	for i, n := 0, len(s); i < n; i++ {
 		b := s[i]
@@ -186,7 +181,6 @@ func EscapeQuery(s string) string {
 			scanned = i + 1
 		}
 	}
-
 	if scanned == 0 {
 		return s
 	}
@@ -195,7 +189,7 @@ func EscapeQuery(s string) string {
 }
 
 func escapeIPliteral(s string) string {
-	var bs bytesp.ByteSlice
+	var bs bytesp.Slice
 	bs.WriteByte('[')
 	bs = appendByteMaskFilteredString(bs, s[1:len(s)-1], &isUrlIpLiteralChars)
 	bs.WriteByte(']')
@@ -208,6 +202,5 @@ func EscapeHost(s string) string {
 		// RFC 3986: IP-literal
 		return escapeIPliteral(s)
 	}
-
 	return string(appendByteMaskFilteredString(nil, s, &isUrlRegNameChars))
 }
